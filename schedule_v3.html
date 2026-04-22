@@ -750,15 +750,29 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
 
 <div class="tab-content" id="tab-history">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">
-    <div style="display:flex;gap:6px;flex-wrap:wrap" id="histFilterBtns"></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="font-size:11px;color:var(--ts)">表示：</span>
+      <button id="histViewKarte" onclick="setHistView(&#39;karte&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #1565C0;background:#1565C0;color:#fff">カルテ</button>
+      <button id="histViewTs" onclick="setHistView(&#39;ts&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">総合</button>
+    </div>
     <button class="btn btn-d" style="font-size:11px;padding:3px 10px" onclick="clearHistory()">履歴をクリア</button>
   </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-    <span style="font-size:11px;color:var(--ts)">並び替え：</span>
-    <button id="histSortLoc" onclick="setHistSort(&#39;loc&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">拠点</button>
-    <button id="histSortNote" onclick="setHistSort(&#39;note&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">求職者</button>
-    <button id="histSortTs" onclick="setHistSort(&#39;ts&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #555;background:#555;color:#fff">登録日時</button>
-    <button id="histSortDk" onclick="setHistSort(&#39;dk&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">予定日</button>
+  <div id="histTsControls" style="display:none">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <span style="font-size:11px;color:var(--ts)">並び替え：</span>
+      <button id="histSortTs" onclick="setHistSort(&#39;ts&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #555;background:#555;color:#fff">最新イベント</button>
+      <button id="histSortNote" onclick="setHistSort(&#39;note&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">求職者</button>
+      <button id="histSortLoc" onclick="setHistSort(&#39;loc&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">拠点</button>
+      <button id="histSortDk" onclick="setHistSort(&#39;dk&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">予定日</button>
+    </div>
+  </div>
+  <div id="histKarteControls">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <span style="font-size:11px;color:var(--ts)">並び替え：</span>
+      <button id="karteSortLatest" onclick="setKarteSort(&#39;latest&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">最新イベント</button>
+      <button id="karteSortName" onclick="setKarteSort(&#39;name&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #555;background:#555;color:#fff">求職者名</button>
+      <button id="karteSortLoc" onclick="setKarteSort(&#39;loc&#39;)" style="font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555">拠点</button>
+    </div>
   </div>
   <div id="histList"></div>
 </div>
@@ -4223,33 +4237,34 @@ function clearHistory(){
   renderHistory();
 }
 function renderHistory(){
+  // モード別にコントロール部分を表示切替
+  const tsCtrl=document.getElementById('histTsControls');
+  const kCtrl=document.getElementById('histKarteControls');
+  if(tsCtrl)tsCtrl.style.display=_histView==='ts'?'block':'none';
+  if(kCtrl)kCtrl.style.display=_histView==='karte'?'block':'none';
+  if(_histView==='karte'){renderHistoryKarte();return;}
   const hist=getHistory();
-  let filtered=_histFilter==='all'?hist:hist.filter(e=>e.type===_histFilter);
-  // ソート
-  filtered=[...filtered].sort((a,b)=>{
+  // カルテのステータスを事前計算して、各イベントが「要対応(進行中)」かを判定
+  const kartes=buildKartes(hist);
+  const keyToStatus={};
+  kartes.forEach(k=>{keyToStatus[(k.etype||'')+'|'+(k.loc||'')+'|'+k.note]=k.status;});
+  let filtered=[...hist].sort((a,b)=>{
     if(_histSort==='ts')return b.ts-a.ts;
     if(_histSort==='dk')return (b.dk||'').localeCompare(a.dk||'');
     if(_histSort==='loc')return (a.loc||'').localeCompare(b.loc||'');
     if(_histSort==='note')return (a.note||'').localeCompare(b.note||'');
     return 0;
   });
-  const fb=document.getElementById('histFilterBtns');
-  if(fb){
-    const counts={};hist.forEach(e=>{counts[e.type]=(counts[e.type]||0)+1;});
-    const btnS=(active,color)=>active
-      ?'font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid '+color+';background:'+color+';color:#fff'
-      :'font-size:11px;padding:3px 10px;border-radius:10px;cursor:pointer;border:1px solid #ccc;background:#f8f8f8;color:#555';
-    let btns=`<button onclick="setHistFilter('all')" style="${btnS(_histFilter==='all','#555')}">全て(${hist.length})</button>`;
-    Object.entries(HIST_TYPES).forEach(([k,v])=>{
-      btns+=`<button onclick="setHistFilter('${k}')" style="${btnS(_histFilter===k,v.color)}">${v.label}(${counts[k]||0})</button>`;
-    });
-    fb.innerHTML=btns;
-  }
   const el=document.getElementById('histList');
   if(!el)return;
   if(!filtered.length){el.innerHTML='<div style="text-align:center;color:#999;padding:40px;font-size:13px">履歴はありません</div>';return;}
   const rows=filtered.map(item=>{
     const ht=HIST_TYPES[item.type]||{label:item.type,color:'#888',bg:'#f5f5f5'};
+    // このイベントが属するカルテのステータスを取得。進行中以外は取り消し線
+    const note=(item.note||'').trim();
+    const key=(item.etype||'')+'|'+(item.loc||'')+'|'+note;
+    const karteStatus=note?keyToStatus[key]:null;
+    const isActive=karteStatus==='pending'||!karteStatus;
     const d=new Date(item.ts);
     const ts=(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
     const dkStr=item.dk?parseInt(item.dk.split('-')[1])+'/'+parseInt(item.dk.split('-')[2]):'';
@@ -4262,13 +4277,135 @@ function renderHistory(){
     if(item.note)detail+='<span style="color:#888">求職者:</span> '+item.note;
     if(item.multi)detail+='&nbsp;&nbsp;<span style="font-size:11px;color:#2E8B57;font-weight:700">複数候補'+item.multi+'件</span>';
     if(item.comment)detail+='<br><span style="color:#888">コメント:</span> '+item.comment;
-    return '<div style="background:#fff;border:1px solid #ddd;border-left:4px solid '+ht.color+';border-radius:6px;padding:10px 12px;margin-bottom:8px">'
+    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+ht.color+';border-radius:6px;padding:10px 12px;margin-bottom:8px'+(isActive?'':';text-decoration:line-through;color:#999');
+    return '<div style="'+cardStyle+'">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'
       +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+ht.bg+';color:'+ht.color+'">'+ht.label+'</span>'
       +'<span style="font-size:11px;color:#999">'+ts+'</span></div>'
       +'<div style="font-size:12px;color:#333;line-height:1.9">'+detail+'</div></div>';
   });
   el.innerHTML=rows.join('');
+}
+
+/* ===== カルテ表示 ===== */
+const KARTE_STATUS={
+  pending:{label:'進行中',color:'#E6A800',bg:'#FFF8E1',order:1},
+  approved:{label:'承諾済',color:'#1565C0',bg:'#E3F2FD',order:2},
+  rerequest:{label:'再依頼中',color:'#7B1FA2',bg:'#F3E5F5',order:3},
+  done:{label:'完了',color:'#2E8B57',bg:'#E8F5E9',order:4},
+  canceled:{label:'キャンセル',color:'#CC0000',bg:'#FFF0F0',order:5}
+};
+function buildKartes(hist){
+  // 種別×拠点×求職者でグルーピング。求職者名が空のものはスキップ
+  const map={};
+  hist.forEach(e=>{
+    const note=(e.note||'').trim();
+    if(!note)return;
+    const key=(e.etype||'')+'|'+(e.loc||'')+'|'+note;
+    if(!map[key])map[key]={etype:e.etype||'',loc:e.loc||'',note:note,events:[]};
+    map[key].events.push(e);
+  });
+  const kartes=Object.values(map);
+  // 各カルテ: イベントを時系列順(古→新)に並べ、ステータス判定・代表値を計算
+  kartes.forEach(k=>{
+    k.events.sort((a,b)=>a.ts-b.ts);
+    const last=k.events[k.events.length-1];
+    const latestTs=last.ts;
+    const types=new Set(k.events.map(e=>e.type));
+    // 代表の予定日・時間・担当は最後のイベントから
+    k.dk=last.dk||'';
+    k.h=last.h||'';
+    k.mem=last.mem||'';
+    k.latestTs=latestTs;
+    // ステータス判定(優先順位: cancel_acc > rerequest(最後) > approve > request)
+    if(types.has('cancel_acc')){k.status='canceled';}
+    else if(last.type==='rerequest'){k.status='rerequest';}
+    else if(types.has('approve')){
+      // 予定日が過去なら完了、未来なら承諾済
+      const now=new Date();const today=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+      if(k.dk&&k.dk<today)k.status='done';else k.status='approved';
+    }
+    else{k.status='pending';}
+  });
+  return kartes;
+}
+function renderHistoryKarte(){
+  const hist=getHistory();
+  const all=buildKartes(hist);
+  // フィルタ
+  let filtered=all;
+  // ソート
+  filtered=[...filtered].sort((a,b)=>{
+    if(_karteSort==='name')return (a.note||'').localeCompare(b.note||'');
+    if(_karteSort==='latest')return b.latestTs-a.latestTs;
+    if(_karteSort==='loc')return (a.loc||'').localeCompare(b.loc||'');
+    return 0;
+  });
+  const el=document.getElementById('histList');
+  if(!el)return;
+  if(!filtered.length){el.innerHTML='<div style="text-align:center;color:#999;padding:40px;font-size:13px">カルテはありません</div>';return;}
+  const rows=filtered.map(k=>{
+    const st=KARTE_STATUS[k.status]||{label:k.status,color:'#888',bg:'#f5f5f5'};
+    const dkStr=k.dk?parseInt(k.dk.split('-')[1])+'/'+parseInt(k.dk.split('-')[2]):'';
+    const timeStr=k.h?(k.h+':00'):'';
+    const etypeLabel=TYPES[k.etype]||k.etype||'';
+    // ヘッダ
+    let head='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">'
+      +'<span style="font-size:14px;font-weight:700;color:#222">👤 '+k.note+'</span>'
+      +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+st.bg+';color:'+st.color+'">'+st.label+'</span>'
+      +'</div>';
+    // 概要
+    let meta='<div style="font-size:12px;color:#555;margin-bottom:8px;line-height:1.7">';
+    if(dkStr)meta+='<span style="color:#888">予定:</span> '+dkStr+' '+timeStr+'&nbsp;&nbsp;';
+    if(etypeLabel)meta+='<span style="color:#888">種別:</span> '+etypeLabel+'&nbsp;&nbsp;';
+    if(k.loc)meta+='<span style="color:#888">拠点:</span> '+k.loc+'&nbsp;&nbsp;';
+    if(k.mem)meta+='<span style="color:#888">担当:</span> '+k.mem;
+    meta+='</div>';
+    // イベント列
+    let evs='<div style="border-top:1px dashed #ddd;padding-top:6px">';
+    k.events.forEach(e=>{
+      const ht=HIST_TYPES[e.type]||{label:e.type,color:'#888',bg:'#f5f5f5'};
+      const d=new Date(e.ts);
+      const ts=(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      evs+='<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0;line-height:1.6">'
+        +'<span style="color:'+ht.color+';font-size:10px">●</span>'
+        +'<span style="color:#999;min-width:80px">'+ts+'</span>'
+        +'<span style="font-weight:700;color:'+ht.color+'">'+ht.label+'</span>';
+      if(e.mem&&e.mem!==k.mem)evs+='<span style="color:#888;font-size:11px">('+e.mem+')</span>';
+      if(e.comment)evs+='<span style="color:#666;font-size:11px">… '+e.comment+'</span>';
+      evs+='</div>';
+    });
+    evs+='</div>';
+    const isPending=k.status==='pending';
+    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+st.color+';border-radius:6px;padding:10px 12px;margin-bottom:10px'+(isPending?'':';text-decoration:line-through;color:#999');
+    return '<div style="'+cardStyle+'">'
+      +head+meta+evs+'</div>';
+  });
+  el.innerHTML=rows.join('');
+}
+let _histView='karte';
+let _karteSort='name';
+function setHistView(v){
+  _histView=v;
+  // ボタンの見た目更新
+  const btnTs=document.getElementById('histViewTs');
+  const btnK=document.getElementById('histViewKarte');
+  if(btnTs){btnTs.style.background=v==='ts'?'#1565C0':'#f8f8f8';btnTs.style.color=v==='ts'?'#fff':'#555';btnTs.style.borderColor=v==='ts'?'#1565C0':'#ccc';}
+  if(btnK){btnK.style.background=v==='karte'?'#1565C0':'#f8f8f8';btnK.style.color=v==='karte'?'#fff':'#555';btnK.style.borderColor=v==='karte'?'#1565C0':'#ccc';}
+  renderHistory();
+}
+function setKarteSort(s){
+  _karteSort=s;
+  ['name','latest','loc'].forEach(k=>{
+    const b=document.getElementById('karteSort'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(b){
+      const on=k===s;
+      b.style.background=on?'#555':'#f8f8f8';
+      b.style.color=on?'#fff':'#555';
+      b.style.borderColor=on?'#555':'#ccc';
+    }
+  });
+  renderHistory();
 }
 function setHistFilter(f){_histFilter=f;renderHistory();}
 
