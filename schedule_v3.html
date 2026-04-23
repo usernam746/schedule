@@ -118,6 +118,8 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
 .st td.c-split{padding:0;vertical-align:middle;background:#fff}
 .split-cell{display:flex;align-items:stretch;min-height:28px}
 .split-half{flex:1;width:50%;padding:0;cursor:pointer;min-width:0;overflow:hidden;display:flex;flex-direction:column;justify-content:stretch;align-items:stretch}
+.split-half .entry{box-shadow:0 1px 3px rgba(0,0,0,0.15);transition:box-shadow 0.08s ease,transform 0.08s ease}
+.split-half .entry:active{box-shadow:0 0 1px rgba(0,0,0,0.1);transform:translateY(1px)}
 .split-half:hover{background:#FFFFF0}
 .split-arrow{display:flex;align-items:center;padding:0 1px;font-size:10px;color:#999;flex-shrink:0;user-select:none}
 .st .mem-sep td,.st td.mem-sep-cell{border-top:2px solid var(--theme-accent,#40C4B0);background:var(--theme-sep-bg,#E0F0E8);height:3px;padding:0}
@@ -291,8 +293,18 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
 #aiSend{background:linear-gradient(135deg,#7B2FBE,#4A90E2);border:none;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:14px;transition:transform .1s}
 #aiSend:active{transform:scale(.9)}
 </style>
-<style id="_memColorStyle">.st td.c-name.mem0{background:#1565C0!important;color:#fff!important;border:1px solid #0D47A1!important}.st td.c-name.mem1{background:#F9A825!important;color:#fff!important;border:1px solid #F57F17!important}.st td.c-name.mem2{background:#2E7D32!important;color:#fff!important;border:1px solid #1B5E20!important}.st td.c-name.mem3{background:#E65100!important;color:#fff!important;border:1px solid #BF360C!important}</style><script src="./研修課スケジュール管理_files/exec(1)"></script><script src="https://script.google.com/macros/s/AKfycby5-tJ7OwhCHJ6Ee-2BpaqwCMAObzvL4wnrLgp0kqhBKqkYP1fOoMfyNup5UV3U79Fw/exec?callback=_ar1776821777202&amp;action=getAll"></script></head>
+<style id="_memColorStyle">.st td.c-name.mem0{background:#1565C0!important;color:#fff!important;border:1px solid #0D47A1!important}.st td.c-name.mem1{background:#F9A825!important;color:#fff!important;border:1px solid #F57F17!important}.st td.c-name.mem2{background:#2E7D32!important;color:#fff!important;border:1px solid #1B5E20!important}.st td.c-name.mem3{background:#E65100!important;color:#fff!important;border:1px solid #BF360C!important}</style></head>
 <body>
+<!-- 閲覧ログインオーバーレイ -->
+<div id="viewLoginOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,30,55,0.96);z-index:100000;align-items:center;justify-content:center;font-family:'Noto Sans JP',sans-serif">
+  <div style="background:#fff;border-radius:10px;padding:30px 36px;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-width:380px;width:90%;box-sizing:border-box">
+    <div style="font-size:17px;font-weight:700;color:#222;margin-bottom:6px;text-align:center">研修課スケジュール管理</div>
+    <div style="font-size:12px;color:#666;margin-bottom:20px;text-align:center">パスワードを入力してください</div>
+    <input type="password" id="viewPwInput" placeholder="パスワード" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #ccc;border-radius:6px;font-size:14px;margin-bottom:10px;outline:none" onkeydown="if(event.key==='Enter')viewLogin()">
+    <button onclick="viewLogin()" style="width:100%;padding:10px;background:#1565C0;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">ログイン</button>
+    <div id="viewPwMsg" style="font-size:12px;color:#CC0000;margin-top:10px;text-align:center;min-height:18px"></div>
+  </div>
+</div>
 <style>
 /* スプラッシュ背景アニメーション */
 .sp-bg{position:absolute;inset:0;overflow:hidden;display:none}
@@ -544,7 +556,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
     <h3>このツールについて</h3>
     <div style="font-size:12px;line-height:1.9;color:var(--tx)">
       <div style="margin-bottom:6px">全員が同じスプレッドシートのデータを共有しています。自分の操作は即時反映されますが、他のメンバーの変更は設定した自動更新間隔（初期値10秒）のタイミングで画面に反映されます。</div>
-      <div>⚠️ 削除・登録した内容が一時的に反映されない、または消えたように見える場合がありますが、次の更新タイミングで正しい状態に戻ります。</div>
+      <div>削除・登録した内容が一時的に反映されない、または消えたように見える場合がありますが、次の更新タイミングで正しい状態に戻ります。</div>
     </div>
   </div>
   <div class="scard"><h3>カラーテーマ</h3>
@@ -674,19 +686,22 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
       <div id="anthropicKeyStatus" style="font-size:11px;color:var(--ts);margin-top:4px"></div>
     </div>
     <div style="font-size:12px;line-height:1.9;color:var(--ts);margin-top:10px"><div>GASの無料プランは1日の実行時間が6分に制限されています。自動更新間隔が短いほど消費が増えるため、複数人が常時使用する場合は30秒以上を推奨します。</div></div>
+    <p style="font-size:11px;color:var(--ts);line-height:1.7;margin-top:10px">※パスワード・APIキー・スケジュール・個人名などはGoogleのサービス内で保管されており、Googleのクラウド基盤上で管理され、通信はHTTPSで暗号化されています。</p>
   </div>
   <div class="scard"><h3>GitHub Pages 管理</h3>
     <p style="font-size:12px;color:var(--ts);margin-bottom:10px">このツールはGitHub Pagesでホスティングされています。</p>
+    <p style="font-size:11px;color:var(--ts);line-height:1.7;margin-bottom:10px">※GitHubはMicrosoft傘下で運営されており、世界中の政府機関やApple・Amazonでも利用されている開発者向けプラットフォームです。セキュリティやインフラ面はMicrosoftのクラウド基盤で支えられています。</p>
     <div style="font-size:12px;font-weight:600;margin-bottom:4px">URL</div>
     <div style="background:var(--bg);border:1px solid var(--bd);border-radius:4px;padding:6px 10px;font-size:11px;word-break:break-all;margin-bottom:12px">https://usernam746.github.io/schedule/schedule_v3.html</div>
     <div style="font-size:12px;font-weight:600;margin-bottom:6px;margin-top:14px">このツールの設計について</div>
+    <p style="font-size:12px;color:var(--ts);line-height:1.7;margin-bottom:8px">このツールはインターネット上で公開されているHTMLであり、URLを知る第三者がアクセスすることは技術的に可能です。扱う情報の範囲と認証設計については下記のとおりです。</p>
     <ul style="font-size:12px;color:var(--ts);line-height:1.7;padding-left:18px;margin-bottom:10px">
       <li>認証情報（パスワード・APIキー）はGoogle Apps Script のサーバー側（スクリプトプロパティ）で管理しており、HTMLファイルおよびGitHubリポジトリには含まれていません</li>
       <li>スケジュールデータはGoogle スプレッドシート（アクセス権限を制限済）で管理しており、GitHubには保存されていません</li>
       <li>メンバー情報・拠点情報はGoogle Apps Scriptから動的取得する設計で、HTMLには実名等のハードコードはありません</li>
-      <li>編集・設定変更等の操作はGAS側で認証トークンを検証しており、パスワードを知らない利用者は閲覧と依頼登録のみ可能です</li>
+      <li>ツール起動時に閲覧パスワードによる認証が必要で、パスワードを知らない第三者は一切の情報にアクセスできません</li>
+      <li>編集・設定変更等の操作は別途メンバーパスワードによる認証が必要で、二段階の認証で守られています</li>
     </ul>
-    <p style="font-size:12px;color:var(--ts);line-height:1.7">なお、このツールはインターネット上で公開されているHTMLであり、URLを知る第三者がアクセスすることは技術的に可能です。扱う情報の範囲と認証設計については上記のとおりです。</p>
   </div>
 
   <div class="scard"><h3>表示・動作設定</h3>
@@ -1052,7 +1067,7 @@ let COLOR_MODE=localStorage.getItem('colorMode')||'new';
 let D=defData(), cY, cM, mCtx=null;
 // GAS URLは機密ゼロ化のため、HTMLにはハードコードしない
 // 初回アクセス時に設定画面からユーザーが入力する必要がある
-const DEFAULT_API='';
+const DEFAULT_API='https://script.google.com/macros/s/AKfycby6TMohCJZECMFgzyOhvbSGjkrdMYg06QGLe3ePYQP06FCj2ImxlL898-S8ttViKwCm/exec';
 
 let API_URL=(()=>{
   const loc=window.location.href;
@@ -1683,7 +1698,13 @@ function applyData(data){
 }
 async function loadFromAPI(){
   if(!API_URL){D=defData();return}
-
+  // 閲覧トークン取得
+  const viewToken=localStorage.getItem('_viewToken')||'';
+  if(!viewToken){
+    // 閲覧トークン無し → ログイン画面表示&中断（キャッシュも見せない）
+    showViewLoginOverlay();
+    return;
+  }
   try{
     const cached=localStorage.getItem(KS2_CACHE_KEY);
     if(cached){
@@ -1694,13 +1715,65 @@ async function loadFromAPI(){
 
   try{
     showLoading(true);
-    const data=await jsonpCall('action=getAll');
+    const data=await jsonpCall('action=getAll&token='+encodeURIComponent(viewToken));
+    if(data&&data.authRequired){
+      // 認証エラー（期限切れ等）→ トークンとキャッシュを消してログイン画面へ
+      localStorage.removeItem('_viewToken');
+      localStorage.removeItem('_viewTokenExp');
+      localStorage.removeItem(KS2_CACHE_KEY);
+      showViewLoginOverlay();
+      return;
+    }
     if(applyData(data)){
       try{localStorage.setItem(KS2_CACHE_KEY,JSON.stringify(data));}catch(e){}
     }
   }catch(e){console.log('Load error:',e)}finally{showLoading(false)}
 }
 function showLoading(on){const el=document.getElementById('loadingBar');if(el)el.style.display=on?'block':'none'}
+
+/* ===== 閲覧ログイン ===== */
+function showViewLoginOverlay(){
+  const sp=document.getElementById('splashScreen');
+  if(sp){sp.style.display='none';sp.style.opacity='0';}
+  const ov=document.getElementById('viewLoginOverlay');
+  if(ov){
+    ov.style.display='flex';
+    setTimeout(()=>{
+      const inp=document.getElementById('viewPwInput');
+      if(inp){inp.value='';inp.focus();}
+    },100);
+  }
+}
+async function viewLogin(){
+  const inp=document.getElementById('viewPwInput');
+  const msg=document.getElementById('viewPwMsg');
+  const val=inp?inp.value.trim():'';
+  if(!val){if(msg){msg.style.color='#CC0000';msg.textContent='パスワードを入力してください';}return;}
+  if(!API_URL){
+    if(msg){msg.style.color='#CC0000';msg.textContent='API URLが設定されていません';}
+    return;
+  }
+  if(msg){msg.style.color='#666';msg.textContent='認証中...';}
+  try{
+    const result=await jsonpCall('payload='+encodeURIComponent(JSON.stringify({action:'login',password:val})));
+    if(result&&result.ok&&result.token){
+      localStorage.setItem('_viewToken',result.token);
+      localStorage.setItem('_viewTokenExp',String(result.expiresAt));
+      if(result.type==='member'){
+        localStorage.setItem('_memberToken',result.token);
+        localStorage.setItem('_memberTokenExp',String(result.expiresAt));
+      }
+      if(msg){msg.style.color='#2E8B57';msg.textContent='ログイン成功';}
+      const ov=document.getElementById('viewLoginOverlay');
+      if(ov)ov.style.display='none';
+      location.reload();
+    }else{
+      if(msg){msg.style.color='#CC0000';msg.textContent=(result&&result.error)||'パスワードが違います';}
+    }
+  }catch(e){
+    if(msg){msg.style.color='#CC0000';msg.textContent='エラー: '+e.message;}
+  }
+}
 
 function dk(y,m,d){return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
 // commentをlocalStorageで永続化するヘルパー
@@ -1936,6 +2009,21 @@ async function fetchNews(){
 }
 
 async function init(){
+  // 閲覧トークンチェック - 無効なら閲覧ログインへ
+  const _vt=localStorage.getItem('_viewToken')||'';
+  const _vtExp=parseInt(localStorage.getItem('_viewTokenExp')||'0');
+  if(!_vt||_vtExp<Date.now()){
+    localStorage.removeItem('_viewToken');
+    localStorage.removeItem('_viewTokenExp');
+    localStorage.removeItem(KS2_CACHE_KEY);
+    // splashを消してオーバーレイ表示
+    const _sp=document.getElementById('splashScreen');
+    if(_sp){_sp.style.display='none';}
+    // API_URL読み込み（loginにはAPI_URLが必要）
+    loadApiUrl();
+    showViewLoginOverlay();
+    return;
+  }
   // スマホ判定を再チェックしてVIEW_MODEを上書き
   if(Math.min(screen.width,screen.height)<=768||/Mobi|Android|iPhone|iPad|Touch/i.test(navigator.userAgent)){VIEW_MODE=0;}
 
@@ -4277,7 +4365,7 @@ function renderHistory(){
     if(item.note)detail+='<span style="color:#888">求職者:</span> '+item.note;
     if(item.multi)detail+='&nbsp;&nbsp;<span style="font-size:11px;color:#2E8B57;font-weight:700">複数候補'+item.multi+'件</span>';
     if(item.comment)detail+='<br><span style="color:#888">コメント:</span> '+item.comment;
-    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+ht.color+';border-radius:6px;padding:10px 12px;margin-bottom:8px'+(isActive?'':';text-decoration:line-through;color:#999');
+    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+ht.color+';border-radius:6px;padding:10px 12px;margin-bottom:8px'+(isActive?'':';text-decoration:line-through;text-decoration-thickness:2px;color:#999');
     return '<div style="'+cardStyle+'">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">'
       +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+ht.bg+';color:'+ht.color+'">'+ht.label+'</span>'
@@ -4377,7 +4465,7 @@ function renderHistoryKarte(){
     });
     evs+='</div>';
     const isPending=k.status==='pending';
-    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+st.color+';border-radius:6px;padding:10px 12px;margin-bottom:10px'+(isPending?'':';text-decoration:line-through;color:#999');
+    const cardStyle='background:#fff;border:1px solid #ddd;border-left:4px solid '+st.color+';border-radius:6px;padding:10px 12px;margin-bottom:10px'+(isPending?'':';text-decoration:line-through;text-decoration-thickness:2px;color:#999');
     return '<div style="'+cardStyle+'">'
       +head+meta+evs+'</div>';
   });
