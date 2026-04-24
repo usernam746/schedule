@@ -2060,7 +2060,7 @@ async function init(){
   clearInterval(_progTimer);if(_progBar){_progBar.style.width='100%';}
   render();
   await new Promise(r=>setTimeout(r,getSplashDuration()));
-  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');setTimeout(()=>{_forceScrollTodayReq=true;renderMembers();},1500);}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
+  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');setTimeout(()=>{_forceScrollTodayReq=true;renderMembers();},1500);setTimeout(()=>{_forceScrollTodayReq=true;renderMembers();},2500);setTimeout(()=>{_forceScrollTodayReq=true;renderMembers();},3500);}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
 
 
   setTimeout(()=>{
