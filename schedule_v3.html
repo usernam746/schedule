@@ -2028,6 +2028,8 @@ async function init(){
   if(Math.min(screen.width,screen.height)<=768||/Mobi|Android|iPhone|iPad|Touch/i.test(navigator.userAgent)){VIEW_MODE=0;}
 
   const _hideSplash=()=>{const s=document.getElementById('splashScreen');if(s){s.style.opacity='0';setTimeout(()=>{s.style.display='none';},500);}};
+  // 【2026-04-24追加】スプラッシュ画面を表示(HTML初期状態でdisplay:none/opacity:0のため明示的に表示)
+  const _spEl=document.getElementById('splashScreen');if(_spEl){_spEl.style.display='flex';_spEl.style.opacity='1';}
   initSplashBg();
 
   let _prog=0;
