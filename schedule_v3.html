@@ -2060,7 +2060,7 @@ async function init(){
   clearInterval(_progTimer);if(_progBar){_progBar.style.width='100%';}
   render();
   await new Promise(r=>setTimeout(r,getSplashDuration()));
-  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
+  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');setTimeout(()=>{_forceScrollTodayReq=true;renderMembers();},1500);}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
 
 
   setTimeout(()=>{
@@ -3037,7 +3037,7 @@ let _naturalW=0;let _scaleS=1;
 let MEM_SPLIT_MODE=localStorage.getItem('memSplitMode')==='true'||false;
 let _requestScrolled=false;
 let _suppressRequestScroll=false;
-let VIEW_MODE=(()=>{const isMobile=Math.min(screen.width,screen.height)<=768||/Mobi|Android|iPhone|iPad|Touch/i.test(navigator.userAgent);if(isMobile)return 0;const s=localStorage.getItem('_defaultViewMode');if(s!==null)return parseInt(s);return 2;})();localStorage.removeItem('dualViewMode');
+let VIEW_MODE=(()=>{const isMobile=Math.min(screen.width,screen.height)<=768||/Mobi|Android|iPhone|iPad|Touch/i.test(navigator.userAgent);if(isMobile)return 0;const s=localStorage.getItem('_defaultViewMode');if(s!==null)return parseInt(s);return 0;})();localStorage.removeItem('dualViewMode');
 let _glowLocs=new Set(JSON.parse(localStorage.getItem('_glowLocs')||'[]'));
 // スクロール制御フラグ：trueの間はsaveAndRestoreScrollの復元をキャンセル
 let _intentionalScroll=false;
@@ -4773,7 +4773,7 @@ function saveGlowLocs(){
   if(msg){msg.textContent='保存しました';setTimeout(()=>{msg.textContent='';},2000);}
   saveAndRestoreScroll(()=>render());
 }
-function getDefaultViewMode(){const s=localStorage.getItem('_defaultViewMode');if(s!==null)return parseInt(s);return /Mobi|Android/i.test(navigator.userAgent)?0:2;}
+function getDefaultViewMode(){const s=localStorage.getItem('_defaultViewMode');if(s!==null)return parseInt(s);return 0;}
 function setDefaultViewMode(m){localStorage.setItem('_defaultViewMode',String(m));updateSettingBtns();}
 
 // メンバー表示色
