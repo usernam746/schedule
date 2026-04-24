@@ -682,8 +682,9 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
     <div id="apiStatus" style="font-size:11px;color:var(--ts);margin-top:4px"></div>
     <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
       <div style="font-size:12px;font-weight:600;margin-bottom:6px">Anthropic APIキー（AIアシスタント用）</div>
-      <div style="display:flex;gap:8px"><input id="anthropicKey" type="password" placeholder="sk-ant-..." style="padding:6px 10px;border:1px solid var(--bds);border-radius:var(--r);font-size:12px;flex:1"><button class="btn" onclick="saveAnthropicKey()">保存</button></div>
-      <div id="anthropicKeyStatus" style="font-size:11px;color:var(--ts);margin-top:4px"></div>
+      <div style="font-size:11px;color:var(--ts);padding:8px;background:rgba(0,120,200,.05);border:1px solid rgba(0,120,200,.15);border-radius:var(--r)">GAS側（スクリプトプロパティ ANTHROPIC_API_KEY）で管理しています。ここでの入力は不要です。</div>
+      <input id="anthropicKey" type="hidden" value="">
+      <div id="anthropicKeyStatus" style="display:none"></div>
     </div>
     <div style="font-size:12px;line-height:1.9;color:var(--ts);margin-top:10px"><div>GASの無料プランは1日の実行時間が6分に制限されています。自動更新間隔が短いほど消費が増えるため、複数人が常時使用する場合は30秒以上を推奨します。</div></div>
     <p style="font-size:11px;color:var(--ts);line-height:1.7;margin-top:10px">※パスワード・APIキー・スケジュール・個人名などはGoogleのサービス内で保管されており、Googleのクラウド基盤上で管理され、通信はHTTPSで暗号化されています。</p>
@@ -1279,14 +1280,9 @@ async function sendAI(){
   const _mems=D.members.join('・');
   const registerPrompt=isRegisterCmd?('\n\n【登録指示の処理】\nユーザーが予定の登録・削除・変更を指示した場合は、以下のJSON形式で回答してください（説明文は不要）：\n{"action":"setEntry","dk":"2026-04-23","mem":"（メンバー名）","h":10,"type":"loc","loc":"（拠点名）","note":""}\nまたは削除の場合：\n{"action":"removeEntry","dk":"2026-04-23","mem":"（メンバー名）","h":10}\nメンバー名は必ず'+_mems+'の中から選んでください。\ntypeは loc/na/tbd/off/iv/tr1/tr2/tr3 のいずれか。\nhは10または14。\n登録できない場合は通常の日本語で回答してください。'):'';
   const systemPrompt=`あなたは研修課スケジュール管理ツールのAIアシスタントです。スケジュールデータを元に質問に答えるほか、一般的な知識や業務上の質問にも幅広く答えてください。回答は簡潔に、日本語で。\n\n現在日時: ${today.toLocaleDateString('ja-JP')} ${cY}年${cM}月表示中\n\n${summary}${registerPrompt}`;
-  const _aiKey=localStorage.getItem('_anthropicKey')||'';
-  if(!_aiKey){loading.className='ai-msg ai';loading.textContent='設定タブでAnthropicAPIキーを入力してください';return;}
+  if(!API_URL){loading.className='ai-msg ai';loading.textContent='API_URLが設定されていません';return;}
   try{
-    const result=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':_aiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:systemPrompt,messages:[{role:'user',content:q}]})
-    }).then(r=>r.json()).catch(()=>({error:'通信エラー'}));
+    const result=await apiCall('callClaude',{system:systemPrompt,messages:[{role:'user',content:q}]}).catch(()=>({error:'通信エラー'}));
     loading.className='ai-msg ai';
     if(result.error){
       loading.textContent='エラー: '+(typeof result.error==='string'?result.error:JSON.stringify(result.error));
