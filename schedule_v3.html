@@ -1261,10 +1261,20 @@ function toggleAITemplateMenu(){
   const show=m.style.display==='none';
   m.style.display=show?'block':'none';
   if(show){
-    // 【2026-04-25改修】実際のAIウィンドウ幅から位置計算(動的サイズ対応)
+    // 【2026-04-25改修】スマホ等の狭い画面ではAIウィンドウ内に重ねて表示
     const w=document.getElementById('aiWindow');
     const actualW=(w&&w.offsetWidth)||280;
-    m.style.right=(actualW+20)+'px';
+    const menuW=220;
+    const minRequired=actualW+menuW+30;
+    if(window.innerWidth<minRequired){
+      // 狭い画面: AIウィンドウの上に重ねて表示(右端揃え、幅もウィンドウに合わせる)
+      m.style.right='8px';
+      m.style.width=Math.min(actualW-16,menuW)+'px';
+    }else{
+      // 広い画面: 従来通り左隣に表示
+      m.style.right=(actualW+20)+'px';
+      m.style.width='220px';
+    }
   }
 }
 function setAITemplateAndClose(text){
