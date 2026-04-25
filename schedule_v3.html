@@ -403,6 +403,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
     <div id="aiHeader">
       <h4>🤖 AIアシスタント</h4>
       <div style="display:flex;align-items:center;gap:6px">
+        <button id="aiSpeakBtn" onclick="toggleAISpeak()" title="読み上げオン/オフ" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#fff;opacity:.5">🔇</button>
         <button id="aiExpandBtn" onclick="toggleAIExpand()" title="拡大/縮小" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px">⤢</button>
         <div id="aiSpeaking" title="クリックで停止">
           <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -1187,8 +1188,31 @@ function stopMic(){
 
 function speakText(text){
   if(!_synth)return;
+  // 【2026-04-25改修】読み上げオン/オフ判定(デフォルトオフ)
+  if(localStorage.getItem('_aiSpeakEnabled')!=='1')return;
   _synth.cancel();
-  const utter=new SpeechSynthesisUtterance(text);
+  // 【2026-04-25改修】Markdown記号など読み上げに不要な記号を除去
+  const cleanText=text
+    .replace(/```[\s\S]*?```/g,'')               // コードブロック削除
+    .replace(/`([^`]+)`/g,'$1')                  // インラインコードの`のみ削除
+    .replace(/\[([^\]]+)\]\([^)]+\)/g,'$1')      // [text](url) → text
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g,'$1')     // 画像も同様
+    .replace(/^#{1,6}\s+/gm,'')                  // 見出し記号 #
+    .replace(/\*\*([^*]+)\*\*/g,'$1')            // 太字 **text**
+    .replace(/\*([^*]+)\*/g,'$1')                // 斜体 *text*
+    .replace(/__([^_]+)__/g,'$1')                // 太字 __text__
+    .replace(/_([^_]+)_/g,'$1')                  // 斜体 _text_
+    .replace(/~~([^~]+)~~/g,'$1')                // 取り消し線
+    .replace(/^\s*[-*+]\s+/gm,'')                // 行頭の箇条書き記号 - * +
+    .replace(/^\s*\d+\.\s+/gm,'')                // 番号付き 1. 2.
+    .replace(/^\s*>\s+/gm,'')                    // 引用 >
+    .replace(/[#*`_~|>]/g,'')                    // 残った記号を除去
+    .replace(/\n{2,}/g,'。')                     // 段落の空行は句点に
+    .replace(/\n/g,' ')                          // 改行はスペースに
+    .replace(/\s{2,}/g,' ')                      // 連続スペースを1つに
+    .trim();
+  if(!cleanText)return;
+  const utter=new SpeechSynthesisUtterance(cleanText);
   utter.lang='ja-JP';
   utter.rate=1.05;
   utter.pitch=1.0;
@@ -1202,6 +1226,23 @@ function speakText(text){
   utter.onerror=()=>ind.classList.remove('show');
   ind.onclick=()=>{_synth.cancel();ind.classList.remove('show')};
   _synth.speak(utter);
+}
+
+// 【2026-04-25追加】読み上げオン/オフトグル
+function toggleAISpeak(){
+  const enabled=localStorage.getItem('_aiSpeakEnabled')==='1';
+  const next=!enabled;
+  localStorage.setItem('_aiSpeakEnabled',next?'1':'0');
+  updateAISpeakBtn();
+  if(!next&&_synth)_synth.cancel();  // オフ時は読み上げ中なら停止
+}
+function updateAISpeakBtn(){
+  const btn=document.getElementById('aiSpeakBtn');
+  if(!btn)return;
+  const enabled=localStorage.getItem('_aiSpeakEnabled')==='1';
+  btn.textContent=enabled?'🔊':'🔇';
+  btn.style.opacity=enabled?'1':'.5';
+  btn.title=enabled?'読み上げオン(クリックでオフ)':'読み上げオフ(クリックでオン)';
 }
 
 /* ===== AIアシスタント ===== */
@@ -2067,7 +2108,7 @@ async function init(){
   clearInterval(_progTimer);if(_progBar){_progBar.style.width='100%';}
   render();
   await new Promise(r=>setTimeout(r,getSplashDuration()));
-  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
+  _hideSplash();updateColorModeBtn();updateDualViewBtn();updateMemberModeUI();applyMemberRestrictions();updateClock();initNewsBelt();fetchNews();updateAISpeakBtn();const _initTab=document.querySelector(".tab-content.active")?.id;if(_initTab==="tab-request"){_forceScrollTodayReq=true;const _hb=document.getElementById('hmapBody'),_ha=document.getElementById('hmapArrow');if(_hb)_hb.style.display='block';if(_ha)_ha.classList.add('open');}setInterval(fetchNews,600000);setInterval(updateClock,60000);initTheme();if(API_URL){_autoRefreshTimer=setInterval(autoRefresh,getAutoRefreshInterval());}applyMemberColors();bindKatakana('rmNote');bindKatakana('ivNote');
 
 
   setTimeout(()=>{
