@@ -681,12 +681,6 @@ body{font-family:var(--f);background:var(--bg);color:var(--tx);font-size:14px;li
     <p style="font-size:12px;color:var(--ts);margin-bottom:8px">Google Apps ScriptのデプロイURLを設定すると、全員でデータを共有できます。</p>
     <div style="display:flex;gap:8px"><input id="apiUrl" placeholder="https://script.google.com/macros/s/xxxxx/exec" style="padding:6px 10px;border:1px solid var(--bds);border-radius:var(--r);font-size:12px;flex:1" value=""><button class="btn" onclick="saveApiUrl()">保存</button><button class="btn" onclick="reloadFromAPI()">再読込</button></div>
     <div id="apiStatus" style="font-size:11px;color:var(--ts);margin-top:4px"></div>
-    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
-      <div style="font-size:12px;font-weight:600;margin-bottom:6px">Anthropic APIキー（AIアシスタント用）</div>
-      <div style="font-size:11px;color:var(--ts);padding:8px;background:rgba(0,120,200,.05);border:1px solid rgba(0,120,200,.15);border-radius:var(--r)">GAS側（スクリプトプロパティ ANTHROPIC_API_KEY）で管理しています。ここでの入力は不要です。</div>
-      <input id="anthropicKey" type="hidden" value="">
-      <div id="anthropicKeyStatus" style="display:none"></div>
-    </div>
     <div style="font-size:12px;line-height:1.9;color:var(--ts);margin-top:10px"><div>GASの無料プランは1日の実行時間が6分に制限されています。自動更新間隔が短いほど消費が増えるため、複数人が常時使用する場合は30秒以上を推奨します。</div></div>
     <p style="font-size:11px;color:var(--ts);line-height:1.7;margin-top:10px">※パスワード・APIキー・スケジュール・個人名などはGoogleのサービス内で保管されており、Googleのクラウド基盤上で管理され、通信はHTTPSで暗号化されています。</p>
   </div>
